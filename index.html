@@ -50,6 +50,7 @@
     // Fetch keys from GitHub
     async function fetchKeys() {
         try {
+            console.log("Fetching keys...");
             const response = await fetch(KEY_FILE_URL);
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -57,7 +58,9 @@
             const data = await response.json();  // This will contain a list of keys in base64 encoding
             if (data.encoding === "base64") {
                 const decodedContent = atob(data.content); // Decode the base64 content
-                return JSON.parse(decodedContent);  // Parse the decoded JSON data
+                const keys = JSON.parse(decodedContent);  // Parse the decoded JSON data
+                console.log("Fetched keys:", keys);
+                return keys;
             }
             return null;
         } catch (error) {
@@ -70,6 +73,7 @@
     // Fetch users from users.json
     async function fetchUsers() {
         try {
+            console.log("Fetching users...");
             const response = await fetch(USERS_FILE_URL, {
                 headers: { "Authorization": `token ${GITHUB_TOKEN}` }
             });
@@ -86,6 +90,7 @@
     // Save new user to GitHub
     async function saveUser(users) {
         const updatedUsers = btoa(JSON.stringify(users));  // Base64 encode the users array
+        console.log("Saving users...");
         const response = await fetch(USERS_FILE_URL, {
             method: "PUT",
             headers: {
