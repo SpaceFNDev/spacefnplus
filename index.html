@@ -10,63 +10,75 @@
             text-align: center;
             margin-top: 50px;
         }
-        .key-container {
+        .container {
+            display: inline-block;
             border: 1px solid #ccc;
             padding: 20px;
             border-radius: 5px;
-            display: inline-block;
         }
-        .key {
-            font-size: 1.5em;
+        input {
+            width: 100%;
+            padding: 10px;
             margin: 10px 0;
-            word-break: break-all;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-<div class="key-container">
+<div class="container">
     <h1>SpaceFN User Registration</h1>
-    <div class="key" id="keyDisplay">Please wait...</div>
+    <input type="text" id="username" placeholder="Enter your username" />
+    <input type="password" id="password" placeholder="Enter your password" />
+    <input type="text" id="license" placeholder="Enter your license key" />
+    <button onclick="registerUser()">Register</button>
+    <div id="message" class="message"></div>
 </div>
 
 <script>
-    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; // Correct raw URL for GitHub file
-    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // URL for users file
+    // GitHub token and URLs for license and user files
+    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; // Raw URL for licenses.json
+    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // URL for users.json
     const GITHUB_TOKEN = "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";  // Replace with your GitHub token
 
-    // Fetch keys from GitHub
+    // Fetch the available keys from the GitHub repository
     async function fetchKeys() {
         try {
-            console.log("Fetching keys...");
             const response = await fetch(KEY_FILE_URL);
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const data = await response.json();  // This will contain a list of keys in base64 encoding
-            console.log('Fetched keys:', data);
-
-            if (data.encoding === "base64") {
-                const decodedContent = atob(data.content); // Decode the base64 content
-                const keys = JSON.parse(decodedContent);  // Parse the decoded JSON data
-                console.log("Decoded keys:", keys);
-                return keys;
-            }
-            return null;
+            if (!response.ok) throw new Error('Failed to fetch license keys');
+            const data = await response.json();
+            return JSON.parse(atob(data.content));  // Decode and parse the content
         } catch (error) {
             console.error('Error fetching keys:', error);
-            document.getElementById('keyDisplay').textContent = 'Error fetching keys.';
-            return null;
+            showMessage('Error fetching keys. Please try again later.');
+            return [];
         }
     }
 
-    // Fetch users from users.json
+    // Fetch the current list of users from GitHub
     async function fetchUsers() {
         try {
-            console.log("Fetching users...");
             const response = await fetch(USERS_FILE_URL, {
                 headers: { "Authorization": `token ${GITHUB_TOKEN}` }
             });
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            if (!response.ok) throw new Error('Failed to fetch users');
             const data = await response.json();
             const fileContent = await fetch(data[0].download_url);
             return await fileContent.json();
@@ -76,82 +88,86 @@
         }
     }
 
-    // Save new user to GitHub
+    // Save the updated users list back to GitHub
     async function saveUser(users) {
         const updatedUsers = btoa(JSON.stringify(users));  // Base64 encode the users array
-        console.log("Saving users...");
-        const response = await fetch(USERS_FILE_URL, {
-            method: "PUT",
-            headers: {
-                "Authorization": `token ${GITHUB_TOKEN}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: "Register new user",
-                content: updatedUsers
-            })
-        });
-        if (response.ok) {
-            console.log("User saved successfully");
-        } else {
-            console.error("Failed to save user");
+        try {
+            const response = await fetch(USERS_FILE_URL, {
+                method: 'PUT',
+                headers: {
+                    "Authorization": `token ${GITHUB_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: "Register new user",
+                    content: updatedUsers
+                })
+            });
+            if (!response.ok) throw new Error('Failed to save user');
+            console.log('User saved successfully');
+        } catch (error) {
+            console.error('Error saving user:', error);
+            showMessage('Error saving user data. Please try again later.');
         }
     }
 
-    // Handle license key submission and validation
-    async function handleLicenseKeySubmission() {
-        const key = prompt("Please enter your license key:");
-        if (!key) {
-            document.getElementById('keyDisplay').textContent = 'License key is required.';
+    // Show message to the user
+    function showMessage(message) {
+        document.getElementById('message').textContent = message;
+    }
+
+    // Main registration logic
+    async function registerUser() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const licenseKey = document.getElementById('license').value;
+
+        if (!username || !password || !licenseKey) {
+            showMessage('All fields are required.');
             return;
         }
 
+        // Fetch keys and validate the entered license key
         const keys = await fetchKeys();
-        if (!keys) return;
+        const validKey = keys.find(key => key.key === licenseKey);
 
-        const validKey = keys.find(entry => entry.key === key);
-        if (validKey) {
-            console.log('Valid key found:', validKey);
-            const expiryDate = new Date(validKey.expiry * 1000);
-            const currentDate = new Date();
-            if (currentDate < expiryDate) {
-                // Proceed to account registration
-                const hwid = validKey.hwid;  // Automatically grab HWID from the key
-                const username = prompt("Please enter your username:");
-                if (username) {
-                    // Register the user and lock the account to the HWID
-                    const users = await fetchUsers();
-                    const existingUser = users.find(user => user.hwid === hwid);
-
-                    if (existingUser) {
-                        document.getElementById('keyDisplay').textContent = "HWID is already registered.";
-                    } else {
-                        const newUser = {
-                            username: username,
-                            hwid: hwid,
-                            key: key,
-                            expiry: expiryDate
-                        };
-                        users.push(newUser);
-                        await saveUser(users);
-                        document.getElementById('keyDisplay').textContent = `Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}`;
-                    }
-                } else {
-                    document.getElementById('keyDisplay').textContent = "Username is required.";
-                }
-            } else {
-                document.getElementById('keyDisplay').textContent = "Key has expired.";
-            }
-        } else {
-            document.getElementById('keyDisplay').textContent = "Invalid license key.";
+        if (!validKey) {
+            showMessage('Invalid license key.');
+            return;
         }
-    }
 
-    // Start the process immediately on page load
-    window.onload = async function() {
-        document.getElementById('keyDisplay').textContent = 'Fetching keys...';
-        await handleLicenseKeySubmission();
-    };
+        const expiryDate = new Date(validKey.expiry * 1000);
+        const currentDate = new Date();
+        if (currentDate > expiryDate) {
+            showMessage('Your license key has expired.');
+            return;
+        }
+
+        // Proceed with user registration
+        const hwid = validKey.hwid;  // Automatically grab HWID from the key
+        const users = await fetchUsers();
+
+        // Check if the HWID is already registered
+        const existingUser = users.find(user => user.hwid === hwid);
+        if (existingUser) {
+            showMessage('This HWID is already registered.');
+            return;
+        }
+
+        // Save new user
+        const newUser = {
+            username: username,
+            password: password,
+            hwid: hwid,
+            key: licenseKey,
+            expiry: expiryDate
+        };
+
+        users.push(newUser);
+        await saveUser(users);
+
+        showMessage(`Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}.`);
+    }
 </script>
 </body>
 </html>
