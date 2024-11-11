@@ -34,14 +34,33 @@
         button:hover {
             background-color: #0056b3;
         }
+        .registration-form {
+            display: none;
+            margin-top: 20px;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            margin: 10px;
+            width: 250px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
 <div class="key-container">
     <h1>SpaceFN User Registration</h1>
-    <div class="key" id="keyDisplay">Enter your license key to begin.</div>
+    <div class="key" id="keyDisplay">Please enter your license key to begin.</div>
     <button id="submitKeyButton">Submit License Key</button>
 </div>
+
+<div class="registration-form" id="registrationForm">
+    <h2>Register Your Account</h2>
+    <input type="text" id="username" placeholder="Enter your username" required><br>
+    <input type="password" id="password" placeholder="Enter your password" required><br>
+    <button id="submitRegistrationButton">Register</button>
+</div>
+
 <script>
     const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; // Correct raw URL for GitHub file
     const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // URL for users file
@@ -125,30 +144,10 @@
             const expiryDate = new Date(validKey.expiry * 1000);
             const currentDate = new Date();
             if (currentDate < expiryDate) {
-                // Proceed to account registration
-                const hwid = validKey.hwid;  // Automatically grab HWID from the key
-                const username = prompt("Please enter your username:");
-                if (username) {
-                    // Register the user and lock the account to the HWID
-                    const users = await fetchUsers();
-                    const existingUser = users.find(user => user.hwid === hwid);
-
-                    if (existingUser) {
-                        document.getElementById('keyDisplay').textContent = "HWID is already registered.";
-                    } else {
-                        const newUser = {
-                            username: username,
-                            hwid: hwid,
-                            key: key,
-                            expiry: expiryDate
-                        };
-                        users.push(newUser);
-                        await saveUser(users);
-                        document.getElementById('keyDisplay').textContent = `Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}`;
-                    }
-                } else {
-                    document.getElementById('keyDisplay').textContent = "Username is required.";
-                }
+                // Show registration form after key validation
+                document.getElementById('keyDisplay').style.display = 'none';  // Hide key display
+                document.getElementById('registrationForm').style.display = 'block';  // Show registration form
+                document.getElementById('submitRegistrationButton').onclick = () => handleRegistration(validKey.hwid, key, expiryDate);
             } else {
                 document.getElementById('keyDisplay').textContent = "Key has expired.";
             }
@@ -157,7 +156,37 @@
         }
     }
 
-    // Event listener for the registration button
+    // Handle user registration
+    async function handleRegistration(hwid, key, expiryDate) {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (!username || !password) {
+            alert("Both username and password are required.");
+            return;
+        }
+
+        // Fetch users and check if HWID is already registered
+        const users = await fetchUsers();
+        const existingUser = users.find(user => user.hwid === hwid);
+
+        if (existingUser) {
+            document.getElementById('keyDisplay').textContent = "HWID is already registered.";
+        } else {
+            const newUser = {
+                username: username,
+                password: password,  // In a real-world scenario, hash the password
+                hwid: hwid,
+                key: key,
+                expiry: expiryDate
+            };
+            users.push(newUser);
+            await saveUser(users);
+            document.getElementById('keyDisplay').textContent = `Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}`;
+        }
+    }
+
+    // Event listener for the license key submission button
     document.getElementById('submitKeyButton').onclick = handleLicenseKeySubmission;
 </script>
 </body>
