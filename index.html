@@ -53,12 +53,10 @@
 </div>
 
 <script>
-    // GitHub URLs and token for accessing users and licenses data
-    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // GitHub API URL for users.json
-    const LICENSES_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/licenses.json"; // Raw URL for licenses.json
+    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json";
+    const LICENSES_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/licenses.json";
     const GITHUB_TOKEN = "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"; // Replace with a valid GitHub token
 
-    // Function to fetch license keys
     async function fetchKeys() {
         try {
             const response = await fetch(LICENSES_FILE_URL);
@@ -71,7 +69,6 @@
         }
     }
 
-    // Fetch the list of users from GitHub
     async function fetchUsers() {
         try {
             const response = await fetch(USERS_FILE_URL, {
@@ -89,7 +86,6 @@
         }
     }
 
-    // Save the updated users list back to GitHub
     async function saveUser(users) {
         const updatedUsers = btoa(JSON.stringify(users)); // Base64 encode the users array
         try {
@@ -113,7 +109,6 @@
         }
     }
 
-    // Helper function to retrieve the SHA of the file on GitHub
     async function getSHA() {
         try {
             const response = await fetch(USERS_FILE_URL, {
@@ -127,23 +122,20 @@
         }
     }
 
-    // Show message to the user
     function showMessage(message) {
         document.getElementById('message').textContent = message;
     }
 
-    // Main registration logic
     async function registerUser() {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        const licenseKey = document.getElementById('license').value;
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const licenseKey = document.getElementById('license').value.trim();
 
         if (!username || !password || !licenseKey) {
             showMessage('All fields are required.');
             return;
         }
 
-        // Fetch keys and validate the entered license key
         const keys = await fetchKeys();
         const validKey = keys.find(key => key.key === licenseKey);
 
@@ -152,26 +144,22 @@
             return;
         }
 
-        // Check if the license key is expired
-        const expiryDate = new Date(validKey.expiry);
+        const expiryDate = new Date(validKey.expiry * 1000); // assuming expiry is in Unix time format
         const currentDate = new Date();
         if (currentDate > expiryDate) {
             showMessage('Your license key has expired.');
             return;
         }
 
-        // Proceed with user registration
         const hwid = validKey.hwid;
         const users = await fetchUsers();
 
-        // Check if the HWID is already registered
         const existingUser = users.find(user => user.hwid === hwid);
         if (existingUser) {
             showMessage('This HWID is already registered.');
             return;
         }
 
-        // Save new user
         const newUser = {
             username: username,
             password: password,
