@@ -54,11 +54,11 @@
 
 <script>
     // GitHub token and URLs for license and user files
-    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // URL for users.json
+    const USERS_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/users.json"; // URL for users.json
     const GITHUB_TOKEN = "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";  // Replace with your GitHub token
 
     const PROXY_URL = "https://cors-anywhere.herokuapp.com/";  // CORS proxy
-    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; // Raw URL for licenses.json
+    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/licenses.json"; // Raw URL for licenses.json
 
     // Function to check if CORS proxy is available
     async function checkProxy(proxyUrl) {
