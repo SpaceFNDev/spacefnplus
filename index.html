@@ -43,10 +43,12 @@
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             const data = await response.json();  // This will contain a list of keys in base64 encoding
+            console.log('Fetched keys:', data);
+
             if (data.encoding === "base64") {
                 const decodedContent = atob(data.content); // Decode the base64 content
                 const keys = JSON.parse(decodedContent);  // Parse the decoded JSON data
-                console.log("Fetched keys:", keys);
+                console.log("Decoded keys:", keys);
                 return keys;
             }
             return null;
@@ -109,6 +111,7 @@
 
         const validKey = keys.find(entry => entry.key === key);
         if (validKey) {
+            console.log('Valid key found:', validKey);
             const expiryDate = new Date(validKey.expiry * 1000);
             const currentDate = new Date();
             if (currentDate < expiryDate) {
