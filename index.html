@@ -136,7 +136,8 @@
             return;
         }
 
-        const expiryDate = new Date(validKey.expiry * 1000);
+        // Convert the expiry field from a timestamp (milliseconds) to a Date object
+        const expiryDate = new Date(validKey.expiry); // The expiry is already a timestamp, no need to multiply by 1000
         const currentDate = new Date();
         if (currentDate > expiryDate) {
             showMessage('Your license key has expired.');
