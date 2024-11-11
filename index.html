@@ -26,7 +26,7 @@
 <body>
 <div class="key-container">
     <h1>SpaceFN User Registration</h1>
-    <div class="key" id="keyDisplay">Please enter your license key to begin.</div>
+    <div class="key" id="keyDisplay">Please wait...</div>
 </div>
 
 <script>
@@ -147,8 +147,11 @@
         }
     }
 
-    // Start the process as soon as the page loads
-    window.onload = handleLicenseKeySubmission;
+    // Start the process immediately on page load
+    window.onload = async function() {
+        document.getElementById('keyDisplay').textContent = 'Fetching keys...';
+        await handleLicenseKeySubmission();
+    };
 </script>
 </body>
 </html>
