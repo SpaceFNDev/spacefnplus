@@ -53,33 +53,17 @@
 </div>
 
 <script>
-    // GitHub token and URLs for license and user files
-    const USERS_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/users.json"; // URL for users.json
-    const GITHUB_TOKEN = "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";  // Replace with your GitHub token
+    // GitHub URLs and token for accessing users and licenses data
+    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // GitHub API URL for users.json
+    const LICENSES_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/licenses.json"; // Raw URL for licenses.json
+    const GITHUB_TOKEN = "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"; // Replace with a valid GitHub token
 
-    const PROXY_URL = "https://cors-anywhere.herokuapp.com/";  // CORS proxy
-    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/licenses.json"; // Raw URL for licenses.json
-
-    // Function to check if CORS proxy is available
-    async function checkProxy(proxyUrl) {
-        try {
-            const testResponse = await fetch(proxyUrl + KEY_FILE_URL);
-            if (testResponse.ok) {
-                console.log('Proxy is working!');
-            } else {
-                console.log('Proxy failed to fetch data');
-            }
-        } catch (error) {
-            console.error('Proxy check failed:', error);
-        }
-    }
-
+    // Function to fetch license keys
     async function fetchKeys() {
         try {
-            const response = await fetch(PROXY_URL + KEY_FILE_URL);
+            const response = await fetch(LICENSES_FILE_URL);
             if (!response.ok) throw new Error('Failed to fetch license keys');
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
             console.error('Error fetching keys:', error);
             showMessage('Error fetching keys. Please try again later.');
@@ -87,25 +71,27 @@
         }
     }
 
-    // Fetch the current list of users from GitHub
+    // Fetch the list of users from GitHub
     async function fetchUsers() {
         try {
             const response = await fetch(USERS_FILE_URL, {
-                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+                headers: {
+                    "Authorization": `token ${GITHUB_TOKEN}`,
+                    "Accept": "application/vnd.github.v3.raw"
+                }
             });
             if (!response.ok) throw new Error('Failed to fetch users');
-            const data = await response.json();
-            const fileContent = await fetch(data[0].download_url);
-            return await fileContent.json();
+            return await response.json();
         } catch (error) {
             console.error('Error fetching users:', error);
+            showMessage('Error fetching users. Please try again later.');
             return [];
         }
     }
 
     // Save the updated users list back to GitHub
     async function saveUser(users) {
-        const updatedUsers = btoa(JSON.stringify(users));  // Base64 encode the users array
+        const updatedUsers = btoa(JSON.stringify(users)); // Base64 encode the users array
         try {
             const response = await fetch(USERS_FILE_URL, {
                 method: 'PUT',
@@ -115,7 +101,8 @@
                 },
                 body: JSON.stringify({
                     message: "Register new user",
-                    content: updatedUsers
+                    content: updatedUsers,
+                    sha: await getSHA() // Required for updating files in GitHub
                 })
             });
             if (!response.ok) throw new Error('Failed to save user');
@@ -123,6 +110,20 @@
         } catch (error) {
             console.error('Error saving user:', error);
             showMessage('Error saving user data. Please try again later.');
+        }
+    }
+
+    // Helper function to retrieve the SHA of the file on GitHub
+    async function getSHA() {
+        try {
+            const response = await fetch(USERS_FILE_URL, {
+                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+            });
+            const data = await response.json();
+            return data.sha;
+        } catch (error) {
+            console.error('Error retrieving file SHA:', error);
+            return null;
         }
     }
 
@@ -151,8 +152,8 @@
             return;
         }
 
-        // Convert the expiry field from a timestamp (milliseconds) to a Date object
-        const expiryDate = new Date(validKey.expiry); // The expiry is already a timestamp, no need to multiply by 1000
+        // Check if the license key is expired
+        const expiryDate = new Date(validKey.expiry);
         const currentDate = new Date();
         if (currentDate > expiryDate) {
             showMessage('Your license key has expired.');
@@ -160,7 +161,7 @@
         }
 
         // Proceed with user registration
-        const hwid = validKey.hwid;  // Automatically grab HWID from the key
+        const hwid = validKey.hwid;
         const users = await fetchUsers();
 
         // Check if the HWID is already registered
@@ -184,9 +185,6 @@
 
         showMessage(`Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}.`);
     }
-
-    // Check the proxy availability before proceeding
-    checkProxy(PROXY_URL);
 </script>
 </body>
 </html>
