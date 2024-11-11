@@ -101,13 +101,18 @@
                     sha: await getSHA() // Required for updating files in GitHub
                 })
             });
-            if (!response.ok) throw new Error('Failed to save user');
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error saving user:', errorData); // Log the error response from GitHub
+                throw new Error('Failed to save user');
+            }
             console.log('User saved successfully');
         } catch (error) {
             console.error('Error saving user:', error);
             showMessage('Error saving user data. Please try again later.');
         }
     }
+
 
     async function getSHA() {
         try {
