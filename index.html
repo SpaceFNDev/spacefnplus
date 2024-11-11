@@ -43,21 +43,23 @@
     <button id="submitKeyButton">Submit License Key</button>
 </div>
 <script>
-    // GitHub API URLs for fetching keys and users data
-    const KEY_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/licenses.json";
-    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json";
-    const GITHUB_TOKEN = "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";  // Replace with your GitHub token
+    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; // Correct raw URL for GitHub file
+    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // URL for users file
+    const GITHUB_TOKEN = "your_github_token_here";  // Replace with your GitHub token
 
     // Fetch keys from GitHub
     async function fetchKeys() {
         try {
-            const response = await fetch(KEY_FILE_URL, {
-                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
-            });
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            const data = await response.json();
-            const fileContent = await fetch(data[0].download_url);
-            return await fileContent.json();
+            const response = await fetch(KEY_FILE_URL);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const data = await response.json();  // This will contain a list of keys in base64 encoding
+            if (data.encoding === "base64") {
+                const decodedContent = atob(data.content); // Decode the base64 content
+                return JSON.parse(decodedContent);  // Parse the decoded JSON data
+            }
+            return null;
         } catch (error) {
             console.error('Error fetching keys:', error);
             document.getElementById('keyDisplay').textContent = 'Error fetching keys.';
