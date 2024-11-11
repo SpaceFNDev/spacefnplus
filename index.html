@@ -71,7 +71,7 @@
 
     async function fetchUsers() {
         try {
-            const response = await fetch(USERS_FILE_URL, {
+            const response = await fetch(USERS_FILE_URL,  {
                 headers: {
                     "Authorization": `token ${GITHUB_TOKEN}`,
                     "Accept": "application/vnd.github.v3.raw"
@@ -116,16 +116,18 @@
 
     async function getSHA() {
         try {
-            const response = await fetch(USERS_FILE_URL, {
+            const response = await fetch(USERS_FILE_URL, LICENSES_FILE_URL, {
                 headers: { "Authorization": `token ${GITHUB_TOKEN}` }
             });
             const data = await response.json();
+            console.log("SHA retrieved:", data.sha); // Debug output
             return data.sha;
         } catch (error) {
             console.error('Error retrieving file SHA:', error);
             return null;
         }
     }
+
 
     function showMessage(message) {
         document.getElementById('message').textContent = message;
@@ -149,12 +151,16 @@
             return;
         }
 
-        const expiryDate = new Date(validKey.expiry * 1000); // assuming expiry is in Unix time format
+        // Check if the license key is expired
+        const expiryTimestamp = validKey.expiry * 1000; // Multiply by 1000 if expiry is in seconds
+        const expiryDate = new Date(expiryTimestamp);
         const currentDate = new Date();
+        
         if (currentDate > expiryDate) {
             showMessage('Your license key has expired.');
             return;
         }
+
 
         const hwid = validKey.hwid;
         const users = await fetchUsers();
