@@ -54,8 +54,8 @@
 
 <script>
     const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json";
-    const LICENSES_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/refs/heads/main/licenses.json";
-    const GITHUB_TOKEN = "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"; // Replace with a valid GitHub token
+    const LICENSES_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json";
+    const GITHUB_TOKEN = "your_github_token_here"; // Replace with a valid GitHub token
 
     async function fetchKeys() {
         try {
@@ -78,7 +78,8 @@
                 }
             });
             if (!response.ok) throw new Error('Failed to fetch users');
-            return await response.json();
+            const data = await response.json();
+            return JSON.parse(atob(data.content)); // Decode Base64 encoded JSON
         } catch (error) {
             console.error('Error fetching users:', error);
             showMessage('Error fetching users. Please try again later.');
@@ -89,6 +90,9 @@
     async function saveUser(users) {
         const updatedUsers = btoa(JSON.stringify(users)); // Base64 encode the users array
         try {
+            const sha = await getSHA();
+            if (!sha) throw new Error('Failed to get file SHA');
+
             const response = await fetch(USERS_FILE_URL, {
                 method: 'PUT',
                 headers: {
@@ -98,7 +102,7 @@
                 body: JSON.stringify({
                     message: "Register new user",
                     content: updatedUsers,
-                    sha: await getSHA() // Required for updating files in GitHub
+                    sha: sha // Required for updating files in GitHub
                 })
             });
             if (!response.ok) {
@@ -113,21 +117,18 @@
         }
     }
 
-
     async function getSHA() {
         try {
-            const response = await fetch(USERS_FILE_URL, LICENSES_FILE_URL, {
+            const response = await fetch(USERS_FILE_URL, {
                 headers: { "Authorization": `token ${GITHUB_TOKEN}` }
             });
             const data = await response.json();
-            console.log("SHA retrieved:", data.sha); // Debug output
             return data.sha;
         } catch (error) {
             console.error('Error retrieving file SHA:', error);
             return null;
         }
     }
-
 
     function showMessage(message) {
         document.getElementById('message').textContent = message;
@@ -160,7 +161,6 @@
             showMessage('Your license key has expired.');
             return;
         }
-
 
         const hwid = validKey.hwid;
         const users = await fetchUsers();
