@@ -54,12 +54,11 @@
 
 <script>
     // GitHub token and URLs for license and user files
-    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; // Raw URL for licenses.json
     const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json"; // URL for users.json
     const GITHUB_TOKEN = "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";  // Replace with your GitHub token
 
     const PROXY_URL = "https://cors-anywhere.herokuapp.com/";
-    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; 
+    const KEY_FILE_URL = "https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json"; // Raw URL for licenses.json
 
     async function fetchKeys() {
         try {
@@ -78,7 +77,7 @@
     // Fetch the current list of users from GitHub
     async function fetchUsers() {
         try {
-            const response = await fetch(USERS_FILE_URL, {
+            const response = await fetch(PROXY_URL + USERS_FILE_URL, {
                 headers: { "Authorization": `token ${GITHUB_TOKEN}` }
             });
             if (!response.ok) throw new Error('Failed to fetch users');
@@ -95,7 +94,7 @@
     async function saveUser(users) {
         const updatedUsers = btoa(JSON.stringify(users));  // Base64 encode the users array
         try {
-            const response = await fetch(USERS_FILE_URL, {
+            const response = await fetch(PROXY_URL + USERS_FILE_URL, {
                 method: 'PUT',
                 headers: {
                     "Authorization": `token ${GITHUB_TOKEN}`,
