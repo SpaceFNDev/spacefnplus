@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceFN Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .key-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .key {
+            font-size: 1.5em;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="key-container">
+    <h1>SpaceFN User Registration</h1>
+    <div class="key" id="keyDisplay">Enter your license key to begin.</div>
+    <button id="submitKeyButton">Submit License Key</button>
+</div>
+<script>
+    // GitHub API URLs for fetching keys and users data
+    const KEY_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/licenses.json";
+    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json";
+    const GITHUB_TOKEN = "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";  // Replace with your GitHub token
+
+    // Fetch keys from GitHub
+    async function fetchKeys() {
+        try {
+            const response = await fetch(KEY_FILE_URL, {
+                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+            });
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            const data = await response.json();
+            const fileContent = await fetch(data[0].download_url);
+            return await fileContent.json();
+        } catch (error) {
+            console.error('Error fetching keys:', error);
+            document.getElementById('keyDisplay').textContent = 'Error fetching keys.';
+            return null;
+        }
+    }
+
+    // Fetch users from users.json
+    async function fetchUsers() {
+        try {
+            const response = await fetch(USERS_FILE_URL, {
+                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+            });
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            const data = await response.json();
+            const fileContent = await fetch(data[0].download_url);
+            return await fileContent.json();
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            return [];
+        }
+    }
+
+    // Save new user to GitHub
+    async function saveUser(users) {
+        const updatedUsers = btoa(JSON.stringify(users));  // Base64 encode the users array
+        const response = await fetch(USERS_FILE_URL, {
+            method: "PUT",
+            headers: {
+                "Authorization": `token ${GITHUB_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: "Register new user",
+                content: updatedUsers
+            })
+        });
+        if (response.ok) {
+            console.log("User saved successfully");
+        } else {
+            console.error("Failed to save user");
+        }
+    }
+
+    // Handle license key submission and validation
+    async function handleLicenseKeySubmission() {
+        const key = prompt("Please enter your license key:");
+        if (!key) {
+            document.getElementById('keyDisplay').textContent = 'License key is required.';
+            return;
+        }
+
+        const keys = await fetchKeys();
+        if (!keys) return;
+
+        const validKey = keys.find(entry => entry.key === key);
+        if (validKey) {
+            const expiryDate = new Date(validKey.expiry * 1000);
+            const currentDate = new Date();
+            if (currentDate < expiryDate) {
+                // Proceed to account registration
+                const hwid = validKey.hwid;  // Automatically grab HWID from the key
+                const username = prompt("Please enter your username:");
+                if (username) {
+                    // Register the user and lock the account to the HWID
+                    const users = await fetchUsers();
+                    const existingUser = users.find(user => user.hwid === hwid);
+
+                    if (existingUser) {
+                        document.getElementById('keyDisplay').textContent = "HWID is already registered.";
+                    } else {
+                        const newUser = {
+                            username: username,
+                            hwid: hwid,
+                            key: key,
+                            expiry: expiryDate
+                        };
+                        users.push(newUser);
+                        await saveUser(users);
+                        document.getElementById('keyDisplay').textContent = `Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}`;
+                    }
+                } else {
+                    document.getElementById('keyDisplay').textContent = "Username is required.";
+                }
+            } else {
+                document.getElementById('keyDisplay').textContent = "Key has expired.";
+            }
+        } else {
+            document.getElementById('keyDisplay').textContent = "Invalid license key.";
+        }
+    }
+
+    // Event listener for the registration button
+    document.getElementById('submitKeyButton').onclick = handleLicenseKeySubmission;
+</script>
+</body>
+</html>
