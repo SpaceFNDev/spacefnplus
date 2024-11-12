@@ -134,10 +134,20 @@
     async function getSHA() {
         try {
             const response = await fetch(USERS_FILE_URL, {
-                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+                headers: { 
+                    "Authorization": `token ${GITHUB_TOKEN}`,
+                    "Accept": "application/vnd.github.v3.raw" 
+                }
             });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error fetching SHA:', errorData);
+                return null;  // Return null if there's an error
+            }
+    
             const data = await response.json();
-            return data.sha;
+            return data.sha;  // Return the SHA value
         } catch (error) {
             console.error('Error retrieving file SHA:', error);
             return null;
