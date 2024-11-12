@@ -179,178 +179,185 @@
     </div>
 
 <script>
-    const USERS_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/users.json";
-    const LICENSES_FILE_URL = "https://api.github.com/repos/SpaceFNDev/spacefn-keys/contents/licenses.json";
-    const GITHUB_TOKEN = "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"; // Replace with a valid GitHub token
+const USERS_FILE_URL = 'https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/users.json';
+const LICENSES_FILE_URL = 'https://raw.githubusercontent.com/SpaceFNDev/spacefn-keys/main/licenses.json';
+const GITHUB_TOKEN = 'your_github_token_here';  // Your GitHub token if needed for authentication
 
-    async function fetchKeys() {
-        try {
-            const response = await fetch(LICENSES_FILE_URL);
-            if (!response.ok) throw new Error('Failed to fetch license keys');
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching keys:', error);
-            showMessage('Error fetching keys. Please try again later.');
-            return [];
-        }
+async function fetchKeys() {
+    try {
+        const response = await fetch(LICENSES_FILE_URL);
+        if (!response.ok) throw new Error('Failed to fetch license keys');
+        const data = await response.json();
+        return data; // JSON parsed from the raw content
+    } catch (error) {
+        console.error('Error fetching keys:', error);
+        showMessage('Error fetching keys. Please try again later.');
+        return [];
     }
+}
 
-
-    
-    async function fetchUsers() {
-        try {
-            const response = await fetch(USERS_FILE_URL, {
-                headers: {
-                    "Authorization": `token ${GITHUB_TOKEN}`,
-                }
-            });
-            if (!response.ok) throw new Error('Failed to fetch users');
-            const data = await response.json();
-            const users = JSON.parse(atob(data.content)); // Decode Base64 content
-            return users;
-        } catch (error) {
-            console.error('Error fetching users:', error);
-            showMessage('Error fetching users. Please try again later.');
-            return [];
-        }
+async function fetchUsers() {
+    try {
+        const response = await fetch(USERS_FILE_URL);
+        if (!response.ok) throw new Error('Failed to fetch users');
+        const data = await response.json();  // GitHub raw content will return the JSON
+        return data; // Return parsed JSON
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        showMessage('Error fetching users. Please try again later.');
+        return [];
     }
+}
 
-    async function saveUser(users) {
-        const updatedUsers = btoa(JSON.stringify(users)); // Base64 encode the users array
-        try {
-            const sha = await getSHA();
-            if (!sha) throw new Error('Failed to get file SHA');
+async function saveUser(users) {
+    const updatedUsers = JSON.stringify(users);
+    try {
+        const sha = await getSHA(); // If you need to fetch file SHA for update
+        if (!sha) throw new Error('Failed to get file SHA');
 
-            const response = await fetch(USERS_FILE_URL, {
-                method: 'PUT',
-                headers: {
-                    "Authorization": `token ${GITHUB_TOKEN}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    message: "Register new user",
-                    content: updatedUsers,
-                    sha: sha // Required for updating files in GitHub
-                })
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Error saving user:', errorData); // Log the error response from GitHub
-                throw new Error('Failed to save user');
-            }
-            console.log('User saved successfully');
-        } catch (error) {
-            console.error('Error saving user:', error);
-            showMessage('Error saving user data. Please try again later.');
-        }
+        const response = await fetch(USERS_FILE_URL, {
+            method: 'PUT',
+            headers: {
+                "Authorization": `token ${GITHUB_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: "Register new user",
+                content: btoa(updatedUsers), // Encode in Base64 for GitHub API
+                sha: sha // Required for updating files in GitHub
+            })
+        });
+        if (!response.ok) throw new Error('Failed to save user');
+        console.log('User saved successfully');
+    } catch (error) {
+        console.error('Error saving user:', error);
+        showMessage('Error saving user data. Please try again later.');
     }
+}
 
-    async function getSHA() {
-        try {
-            const response = await fetch(USERS_FILE_URL, {
-                headers: { 
-                    "Authorization": `token ${GITHUB_TOKEN}`,
-                    "Accept": "application/vnd.github.v3.raw" 
-                }
-            });
-    
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Error fetching SHA:', errorData);
-                return null;  // Return null if there's an error
-            }
-    
-            const data = await response.json();
-            return data.sha;  // Return the SHA value
-        } catch (error) {
-            console.error('Error retrieving file SHA:', error);
-            return null;
-        }
-    }
-
-    function showMessage(message) {
-        document.getElementById('message').textContent = message;
-    }
-
-    async function registerUser() {
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const licenseKey = document.getElementById('license').value.trim();
-
-        if (!username || !password || !licenseKey) {
-            showMessage('All fields are required.');
-            return;
-        }
-
-        const keys = await fetchKeys();
-        const validKey = keys.find(key => key.key === licenseKey);
-
-        if (!validKey) {
-            showMessage('Invalid license key.');
-            return;
-        }
-
-        // Check if the license key is expired
-        const expiryTimestamp = validKey.expiry * 1000; // Multiply by 1000 if expiry is in seconds
-        const expiryDate = new Date(expiryTimestamp);
-        const currentDate = new Date();
+async function getSHA() {
+    try {
+        const response = await fetch(USERS_FILE_URL);
+        if (!response.ok) throw new Error('Error fetching file SHA');
         
-        if (currentDate > expiryDate) {
-            showMessage('Your license key has expired.');
-            return;
-        }
+        const data = await response.json();
+        return data.sha; // Return the SHA for file update
+    } catch (error) {
+        console.error('Error retrieving file SHA:', error);
+        return null;
+    }
+}
 
-        const hwid = validKey.hwid;
-        const users = await fetchUsers();
+function showMessage(message) {
+    document.getElementById('message').textContent = message;
+}
 
-        const existingUser = users.find(user => user.hwid === hwid);
-        if (existingUser) {
-            showMessage('This HWID is already registered.');
-            return;
-        }
+// Register User Function
+async function registerUser() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const licenseKey = document.getElementById('license').value.trim();
 
-        const newUser = {
-            username: username,
-            password: password,
-            hwid: hwid,
-            key: licenseKey,
-            expiry: expiryDate
-        };
-
-        users.push(newUser);
-        await saveUser(users);
-
-        showMessage(`Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}.`);
+    if (!username || !password || !licenseKey) {
+        showMessage('All fields are required.');
+        return;
     }
 
-    async function loginUser() {
-        const loginUsername = document.getElementById('loginUsername').value.trim();
-        const loginPassword = document.getElementById('loginPassword').value.trim();
+    const keys = await fetchKeys();
+    const validKey = keys.find(key => key.key === licenseKey);
 
-        if (!loginUsername || !loginPassword) {
-            document.getElementById('loginMessage').textContent = 'All fields are required.';
-            return;
-        }
-
-        const users = await fetchUsers();
-        const user = users.find(user => user.username === loginUsername && user.password === loginPassword);
-
-        if (!user) {
-            document.getElementById('loginMessage').textContent = 'Invalid username or password.';
-            return;
-        }
-
-        // HWID check
-        const hwid = user.hwid;
-        const currentHWID = "your_current_hwid"; // Replace with code to fetch the current HWID of the system
-
-        if (hwid !== currentHWID) {
-            document.getElementById('loginMessage').textContent = 'HWID mismatch. This account is locked to another device.';
-            return;
-        }
-
-        document.getElementById('loginMessage').textContent = 'Login successful!';
+    if (!validKey) {
+        showMessage('Invalid license key.');
+        return;
     }
+
+    const expiryTimestamp = validKey.expiry * 1000;
+    const expiryDate = new Date(expiryTimestamp);
+    const currentDate = new Date();
+
+    if (currentDate > expiryDate) {
+        showMessage('Your license key has expired.');
+        return;
+    }
+
+    const hwid = validKey.hwid;
+    const users = await fetchUsers();
+
+    const existingUser = users.find(user => user.hwid === hwid);
+    if (existingUser) {
+        showMessage('This HWID is already registered.');
+        return;
+    }
+
+    const newUser = {
+        username: username,
+        password: password,
+        hwid: hwid,
+        key: licenseKey,
+        expiry: expiryDate
+    };
+
+    users.push(newUser);
+    await saveUser(users);
+
+    showMessage(`Registration successful! Account locked to HWID. Key valid until ${expiryDate.toLocaleString()}.`);
+}
+
+async function loginUser() {
+    const loginUsername = document.getElementById('loginUsername').value.trim();
+    const loginPassword = document.getElementById('loginPassword').value.trim();
+
+    if (!loginUsername || !loginPassword) {
+        document.getElementById('loginMessage').textContent = 'All fields are required.';
+        return;
+    }
+
+    const users = await fetchUsers();
+    const user = users.find(user => user.username === loginUsername && user.password === loginPassword);
+
+    if (!user) {
+        document.getElementById('loginMessage').textContent = 'Invalid username or password.';
+        return;
+    }
+
+    // Simulate HWID (In this case, use localStorage to store a unique identifier for the current user)
+    const hwid = user.hwid;
+    const currentHWID = getCurrentHWID(); // This is just a simulated value
+
+    if (hwid !== currentHWID) {
+        document.getElementById('loginMessage').textContent = 'HWID mismatch. This account is locked to another device.';
+        return;
+    }
+
+    document.getElementById('loginMessage').textContent = 'Login successful!';
+}
+
+// Simulate HWID fetch using localStorage or any persistent client-side storage
+function getCurrentHWID() {
+    let hwid = localStorage.getItem('hwid');
+    if (!hwid) {
+        // If HWID is not stored, generate a new one (using some data unique to the session)
+        hwid = 'uniqueHWID-' + Date.now(); // A basic example, use something more persistent
+        localStorage.setItem('hwid', hwid);
+    }
+    return hwid;
+}
+
+// Simulate fetching users from a local file or raw data
+async function fetchUsers() {
+    try {
+        const response = await fetch('users.json');  // Local file or raw URL, assuming it's available
+        if (!response.ok) {
+            throw new Error('Failed to load users data');
+        }
+        const data = await response.json();
+        return data.users; // Assuming the data has a 'users' array
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        document.getElementById('loginMessage').textContent = 'Error fetching user data. Please try again.';
+        return [];
+    }
+}
 </script>
 </body>
 </html>
