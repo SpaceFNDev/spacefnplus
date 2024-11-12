@@ -5,65 +5,177 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpaceFN - Registration & Login</title>
     <style>
+        /* Background and Animation */
         body {
             font-family: 'Arial', sans-serif;
-            text-align: center;
-            margin-top: 50px;
-            background: linear-gradient(to right, #6a11cb, #2575fc);
-            color: white;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #6a11cb, #2575fc);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .container {
-            display: inline-block;
-            border: 1px solid #fff;
-            padding: 20px;
-            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
+
+        h1 {
+            font-size: 2em;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .form-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
         input {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             margin: 10px 0;
+            border-radius: 8px;
             border: 1px solid #fff;
-            border-radius: 5px;
-            background-color: transparent;
-            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1.1em;
+            transition: 0.3s;
         }
+
+        input:focus {
+            outline: none;
+            border-color: #00c6ff;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
         button {
-            padding: 12px 20px;
-            font-size: 1em;
+            padding: 12px 30px;
+            font-size: 1.2em;
             cursor: pointer;
             border: none;
-            background-color: #007BFF;
-            color: white;
+            background-color: #007bff;
+            color: #fff;
             border-radius: 5px;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s ease, transform 0.2s;
+            margin-top: 20px;
         }
+
         button:hover {
             background-color: #0056b3;
+            transform: scale(1.05);
         }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
         .message {
             margin-top: 20px;
             font-weight: bold;
+            color: #ffcc00;
         }
-        .form-title {
-            font-size: 1.5em;
+
+        hr {
+            border: 1px solid #fff;
+            width: 100%;
+            margin: 30px 0;
+        }
+
+        .input-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .form-container {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .input-container input {
+            margin-bottom: 15px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .form-title {
+                font-size: 1.2em;
+            }
+
+            input {
+                font-size: 1em;
+            }
+
+            button {
+                padding: 10px 25px;
+                font-size: 1em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="form-title">SpaceFN Registration</h1>
-        <input type="text" id="username" placeholder="Enter your username" />
-        <input type="password" id="password" placeholder="Enter your password" />
-        <input type="text" id="license" placeholder="Enter your license key" />
-        <button onclick="registerUser()">Register</button>
-        <div class="message" id="message"></div>
-        <hr>
-        <h1 class="form-title">SpaceFN Login</h1>
-        <input type="text" id="loginUsername" placeholder="Enter your username" />
-        <input type="password" id="loginPassword" placeholder="Enter your password" />
-        <button onclick="loginUser()">Login</button>
-        <div class="message" id="loginMessage"></div>
+        <!-- Registration Section -->
+        <div class="form-container">
+            <h1 class="form-title">SpaceFN Registration</h1>
+            <div class="input-container">
+                <input type="text" id="username" placeholder="Enter your username" />
+            </div>
+            <div class="input-container">
+                <input type="password" id="password" placeholder="Enter your password" />
+            </div>
+            <div class="input-container">
+                <input type="text" id="license" placeholder="Enter your license key" />
+            </div>
+            <button onclick="registerUser()">Register</button>
+            <div class="message" id="message"></div>
+        </div>
+
+        <hr />
+
+        <!-- Login Section -->
+        <div class="form-container">
+            <h1 class="form-title">SpaceFN Login</h1>
+            <div class="input-container">
+                <input type="text" id="loginUsername" placeholder="Enter your username" />
+            </div>
+            <div class="input-container">
+                <input type="password" id="loginPassword" placeholder="Enter your password" />
+            </div>
+            <button onclick="loginUser()">Login</button>
+            <div class="message" id="loginMessage"></div>
+        </div>
     </div>
 
 <script>
